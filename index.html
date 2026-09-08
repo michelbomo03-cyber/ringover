@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>EA Plus Formation — Compagnon Ringover</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --navy: #1b2a4a;
+    --blue: #2f5496;
+    --accent: #e8b100;
+    --bg: #f4f6fa;
+    --card: #ffffff;
+    --text: #1c1c1c;
+    --muted: #6b7280;
+    --green: #1e8e3e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .status { font-size: 13px; color: #cbd5e1; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .dot.on { background: var(--green); }
+  .dot.off { background: #d33; }
+
+  .layout { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 24px; max-width: 900px; margin: 0 auto; }
+
+  .toolbar { display:flex; gap:10px; }
+  .toolbar input {
+    flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px;
+  }
+  .toolbar button {
+    padding: 10px 16px; border-radius: 8px; border: none; background: var(--blue); color: white;
+    font-size: 14px; cursor: pointer;
+  }
+  .toolbar button.secondary { background: #94a3b8; }
+  .toolbar button:hover { opacity: 0.9; }
+
+  .card {
+    background: var(--card); border-radius: 12px; padding: 20px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .placeholder { text-align:center; color: var(--muted); padding: 60px 20px; }
+  .placeholder .big { font-size: 40px; margin-bottom: 10px; }
+
+  .company-name { font-size: 22px; font-weight: 700; color: var(--navy); margin: 0 0 4px 0; }
+  .company-meta { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .badges { display:flex; gap:8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .badge {
+    display:inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  }
+  .badge.secteur { background: #dbeafe; color: #1e3a8a; }
+  .badge.opco { background: #fef3c7; color: #7c4a03; }
+
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 18px 0 8px; font-weight: 700; }
+  ul.args { margin: 0; padding-left: 20px; }
+  ul.args li { margin-bottom: 8px; line-height: 1.4; }
+  ul.args.douleurs li { color: #7c2d12; }
+  ul.args.ia li { color: #14532d; }
+  ul.args.formations li { color: #1e3a8a; }
+
+  .objections { display: grid; gap: 10px; }
+  .objection { border-left: 3px solid var(--accent); padding: 8px 12px; background: #fffbeb; border-radius: 4px; }
+  .objection .q { font-weight: 700; font-size: 13px; }
+  .objection .r { font-size: 13px; color: #374151; margin-top: 2px; }
+
+  .unknown { text-align:center; padding: 30px; color: var(--muted); }
+
+  .results { display:flex; flex-direction: column; gap: 10px; }
+  .result-item {
+    padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; display:flex; justify-content: space-between; align-items:center;
+  }
+  .result-item:hover { background: #f8fafc; }
+  .result-item .name { font-weight: 600; }
+  .result-item .sub { color: var(--muted); font-size: 12px; }
+
+  footer { text-align:center; color: var(--muted); font-size: 12px; padding: 20px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📞 EA Plus Formation — Compagnon Ringover</h1>
+  <div class="status"><span id="statusDot" class="dot off"></span><span id="statusText">Connexion…</span></div>
+</header>
+
+<div class="layout">
+
+  <div class="toolbar">
+    <input id="searchInput" type="text" placeholder="Rechercher par téléphone ou nom d'entreprise…" />
+    <button onclick="doSearch()">Rechercher</button>
+    <button class="secondary" onclick="clearCard()">Effacer</button>
+  </div>
+
+  <div id="resultsCard" class="card" style="display:none;">
+    <div class="section-title">Résultats</div>
+    <div id="resultsList" class="results"></div>
+  </div>
+
+  <div id="mainCard" class="card">
+    <div class="placeholder">
+      <div class="big">☎️</div>
+      En attente d'un appel Ringover ou d'une recherche manuelle…
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Statistiques base de prospection</div>
+    <div id="stats" style="font-size:13px; color:var(--muted);">Chargement…</div>
+  </div>
+
+</div>
+
+<footer>EA Plus Formation — Compagnon Ringover · usage interne</footer>
+
+<script>
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const mainCard = document.getElementById('mainCard');
+const resultsCard = document.getElementById('resultsCard');
+const resultsList = document.getElementById('resultsList');
+
+function renderBrief(brief) {
+  resultsCard.style.display = 'none';
+  if (!brief || (!brief.entreprise) || (brief.inconnu)) {
+    const tel = brief && brief.entreprise ? brief.entreprise.tel : '';
+    mainCard.innerHTML = `
+      <div class="unknown">
+        <div style="font-size:28px;">❓</div>
+        <div style="margin-top:8px;">Numéro non trouvé dans la base de prospection${tel ? ' (' + tel + ')' : ''}.</div>
+        <div style="margin-top:6px; font-size:13px;">Vous pouvez tout de même utiliser les objections génériques ci-dessous.</div>
+      </div>
+      ${renderObjections(brief ? brief.objections : [])}
+    `;
+    return;
+  }
+
+  const e = brief.entreprise;
+  const a = brief.argumentaire;
+
+  mainCard.innerHTML = `
+    <p class="company-name">${e.nom || 'Entreprise'}</p>
+    <p class="company-meta">${e.activite || ''} · ${e.ville || ''} ${e.cp ? '(' + e.cp + ')' : ''} · ${e.tel || ''}</p>
+    <div class="badges">
+      ${e.secteur ? `<span class="badge secteur">${e.secteur}</span>` : ''}
+      ${e.opco ? `<span class="badge opco">OPCO : ${e.opco}</span>` : ''}
+    </div>
+
+    ${a ? `
+      <div class="section-title">Douleurs métier probables</div>
+      <ul class="args douleurs">${a.douleurs.map(d => `<li>${d}</li>`).join('')}</ul>
+
+      <div class="section-title">Arguments Formation IA à utiliser</div>
+      <ul class="args ia">${a.argumentsIA.map(d => `<li>${d}</li>`).join('')}</ul>
+
+      <div class="section-title">Autres formations EA Plus Formation à proposer</div>
+      <ul class="args formations">${a.autresFormations.map(d => `<li>${d}</li>`).join('')}</ul>
+    ` : '<p style="color:var(--muted);">Pas d\\'argumentaire spécifique pour ce secteur.</p>'}
+
+    ${renderObjections(brief.objections)}
+  `;
+}
+
+function renderObjections(objections) {
+  if (!objections || !objections.length) return '';
+  return `
+    <div class="section-title">Objections fréquentes</div>
+    <div class="objections">
+      ${objections.map(o => `
+        <div class="objection">
+          <div class="q">🗨️ ${o.objection}</div>
+          <div class="r">${o.reponse}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function clearCard() {
+  mainCard.innerHTML = `<div class="placeholder"><div class="big">☎️</div>En attente d'un appel Ringover ou d'une recherche manuelle…</div>`;
+  resultsCard.style.display = 'none';
+}
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const res = await fetch('/api/search?q=' + encodeURIComponent(q));
+  const items = await res.json();
+  if (items.length === 1) {
+    renderBrief(items[0]);
+  } else if (items.length > 1) {
+    resultsCard.style.display = 'block';
+    resultsList.innerHTML = items.map((it, i) => `
+      <div class="result-item" onclick='renderBrief(${JSON.stringify(it).replace(/'/g, "&apos;")})'>
+        <div>
+          <div class="name">${it.entreprise.nom}</div>
+          <div class="sub">${it.entreprise.activite || ''} · ${it.entreprise.ville || ''}</div>
+        </div>
+        <div class="sub">${it.entreprise.tel || ''}</div>
+      </div>
+    `).join('');
+  } else {
+    renderBrief({ entreprise: { tel: q }, inconnu: true, objections: [] });
+  }
+}
+
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch();
+});
+
+// ---- Connexion SSE pour les appels Ringover en direct ----
+function connectSSE() {
+  const es = new EventSource('/events');
+  es.onopen = () => {
+    statusDot.className = 'dot on';
+    statusText.textContent = 'Connecté — en écoute des appels';
+  };
+  es.onerror = () => {
+    statusDot.className = 'dot off';
+    statusText.textContent = 'Déconnecté — nouvelle tentative…';
+  };
+  es.addEventListener('call', (evt) => {
+    const brief = JSON.parse(evt.data);
+    renderBrief(brief);
+  });
+}
+connectSSE();
+
+// ---- Stats ----
+fetch('/api/stats').then(r => r.json()).then(s => {
+  const lines = Object.entries(s.bySecteur).map(([k,v]) => `${k} : ${v}`).join(' · ');
+  document.getElementById('stats').textContent = `${s.total} sociétés en base — ${lines}`;
+});
+</script>
+
+</body>
+</html>

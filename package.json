@@ -1,0 +1,12 @@
+{
+  "name": "ea-plus-formation-ringover",
+  "version": "1.0.0",
+  "description": "Compagnon Ringover pour EA Plus Formation - affiche l'argumentaire de vente adapté au secteur de l'entreprise appelée",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
